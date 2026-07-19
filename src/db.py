@@ -124,7 +124,7 @@ async def check_db_health() -> bool:
     """数据库健康检查"""
     try:
         async with AsyncSessionLocal() as session:
-            await session.execute("SELECT 1")
+            await session.execute(text("SELECT 1"))
         return True
     except Exception as e:
         logger.error("❌ DB health check failed: %s", e)
@@ -141,6 +141,4 @@ async def check_redis_health() -> bool:
         return True
     except Exception as e:
         logger.error("❌ Redis health check failed: %s", e)
-        return False
-s", e)
         return False

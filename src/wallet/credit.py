@@ -3,13 +3,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from decimal import Decimal
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
+from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..exceptions import InsufficientBalanceError, RiskLimitExceededError
 from .crud import create_transaction, create_usage_log, get_wallet_by_user_id, update_wallet_balance
-from .models import Transaction
+from .models import Transaction, Wallet
 
 if TYPE_CHECKING:
     from ..billing.pricing import PricingEngine
@@ -52,7 +54,7 @@ class CreditService:
         2. 计算费用
         3. 检查日限额 / 单次限额
         4. 检查余额是否充足
-        5. 原子扣费（乐观锁）
+        5. 原子扣费
         6. 记录 transaction + usage_log
         """
         wallet = await get_wallet_by_user_id(self.session, user_id)
@@ -63,8 +65,7 @@ class CreditService:
         cost_user = self.pricing.calculate_user_cost(cost_provider)
 
         # ---- 风险检查 ----
-        # 日限额
-        daily_cost = await self._get_daily_cost(user_id)
+        daily_cost = await self._get_daily_cost(wallet.id)
         if daily_cost + cost_user > wallet.daily_limit:
             raise RiskLimitExceededError(
                 f"日限额超限: 已用 {daily_cost}, 限额 {wallet.daily_limit}",
@@ -75,7 +76,6 @@ class CreditService:
                 },
             )
 
-        # 单次限额
         if cost_user > wallet.per_call_limit:
             raise RiskLimitExceededError(
                 f"单次费用超限: {cost_user} > {wallet.per_call_limit}",
@@ -85,7 +85,6 @@ class CreditService:
                 },
             )
 
-        # 余额检查
         available = wallet.balance + wallet.credit_limit - wallet.used_this_month
         if available < cost_user:
             raise InsufficientBalanceError(
@@ -100,18 +99,16 @@ class CreditService:
         new_balance = wallet.balance - cost_user
         await update_wallet_balance(self.session, wallet.id, new_balance)
 
-        # 记录交易
         tx = await create_transaction(
             self.session,
             wallet_id=wallet.id,
-            tx_type=Transaction.__tablename__,
+            tx_type="consume",
             amount=-cost_user,
             balance_after=new_balance,
             reference=f"usage:{request_id}",
             note=f"{provider}/{model}",
         )
 
-        # 记录用量日志
         await create_usage_log(
             self.session,
             user_id=user_id,
@@ -136,26 +133,19 @@ class CreditService:
             cost_provider=cost_provider,
         )
 
-    async def _get_daily_cost(self, user_id: int) -> Decimal:
-        """获取今日已消费金额（简化版：实际应查 transaction 表按日统计）"""
-        from sqlalchemy import select, func, and_
-        from .models import Transaction
-        from datetime import datetime, timedelta
-
+    async def _get_daily_cost(self, wallet_id: int) -> Decimal:
+        """获取今日已消费金额"""
         today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
 
         result = await self.session.execute(
             select(func.coalesce(func.sum(Transaction.amount), Decimal("0")))
             .where(
                 and_(
-                    Transaction.wallet_id.in_(
-                        select(Transaction.wallet_id).where(
-                            Transaction.wallet_id == user_id  # simplified
-                        )
-                    ),
+                    Transaction.wallet_id == wallet_id,
                     Transaction.type == "consume",
                     Transaction.created_at >= today_start,
                 )
             )
         )
-        return result.scalar_one() or Decimal("0")
+        val = result.scalar_one_or_none()
+        return (val if val is not None else Decimal("0")).quantize(Decimal("0.0001"))
