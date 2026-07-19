@@ -48,10 +48,18 @@ AsyncSessionLocal = async_sessionmaker(
 
 
 async def init_db() -> None:
-    """初始化数据库（创建所有表）"""
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    logger.info("✅ Database tables created/verified")
+    """初始化数据库（通过 alembic 迁移）"""
+    import subprocess
+    import sys
+    # 用 subprocess 调用 alembic upgrade head（同步阻塞，但只在启动时执行一次）
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head"],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        logger.warning("alembic migration warning: %s", result.stderr)
+    logger.info("✅ Database migration completed")
 
 
 async def close_db() -> None:

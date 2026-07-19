@@ -16,8 +16,8 @@ if not src_init.exists():
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from config import settings
-from wallet.models import Base
+from src.config import settings
+from src.wallet.models import Base
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url)

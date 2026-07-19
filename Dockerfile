@@ -8,8 +8,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Install Python deps
+# Copy application source first (needed for editable install)
+COPY src/ ./src/
+COPY alembic/ ./alembic/
+COPY alembic.ini ./
 COPY pyproject.toml ./
+
+# Install Python deps
 RUN pip install --no-cache-dir -e ".[dev]"
 
 # ===== Production stage =====
@@ -19,7 +24,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     libpq5 \
     && rm -rf /var/lib/apt/lists/* \
-    && useradd --create-home --shell /bin/bash --gid 0 appuser
+    && groupadd --gid 1000 appuser \
+    && useradd --create-home --shell /bin/bash --gid 1000 --uid 1000 appuser
 
 WORKDIR /app
 
