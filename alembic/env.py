@@ -9,7 +9,12 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+# 确保 src 是一个包
+src_init = Path(__file__).resolve().parent.parent / "src" / "__init__.py"
+if not src_init.exists():
+    src_init.write_text("")
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from config import settings
 from wallet.models import Base

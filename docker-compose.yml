@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: xwawa
+      POSTGRES_PASSWORD: xwawa_secure_pass
+      POSTGRES_DB: xwawa_db
+    ports:
+    - 5433:5432
+  redis:
+    image: redis:7-alpine
+    ports:
+    - 6381:6379
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+    - 8800:8800
+    environment:
+      DATABASE_URL: postgresql+asyncpg://xwawa:xwawa_secure_pass@postgres:5432/xwawa_db
+      REDIS_URL: redis://redis:6379
+      APP_SECRET_KEY: ${APP_SECRET_KEY:?required}
+      APP_ENV: ${APP_ENV:-development}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  caddy:
+    image: caddy:3-alpine
+    ports:
+    - 80:80
+    - 443:443
+    volumes:
+    - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+    - app
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    ports:
+    - 9090:9090
+    volumes:
+    - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+  grafana:
+    image: grafana/grafana:11.2.0
+    ports:
+    - 3000:3000
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
