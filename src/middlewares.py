@@ -87,10 +87,15 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
 def register_middlewares(app: FastAPI) -> None:
     """注册所有中间件"""
+    # Parse app_cors_origins from string to list
+    cors_origins = settings.app_cors_origins
+    if isinstance(cors_origins, str):
+        cors_origins = [o.strip() for o in cors_origins.split(",") if o.strip()]
+
     # CORS
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.app_cors_origins,
+        allow_origins=cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -103,7 +108,7 @@ def register_middlewares(app: FastAPI) -> None:
 
     log.info(
         "✅ Middlewares registered",
-        cors_origins=settings.app_cors_origins,
+        cors_origins=cors_origins,
     )
 
 

@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     app_host: str = "0.0.0.0"
     app_port: int = 8800
     app_secret_key: str = Field(..., min_length=32, description="JWT 签名密钥，至少 32 字符")
-    app_cors_origins: list[str] = Field(default_factory=lambda: ["*"])
+    app_cors_origins: str = Field(default="*")
 
     # ===== Database =====
     database_url: PostgresDsn = Field(...)
@@ -117,10 +117,10 @@ class Settings(BaseSettings):
 
     @field_validator("app_cors_origins", mode="before")
     @classmethod
-    def _parse_cors_origins(cls, v: str | list[str]) -> list[str]:
-        if isinstance(v, str):
-            return [origin.strip() for origin in v.split(",") if origin.strip()]
-        return v
+    def _parse_cors_origins(cls, v: Any) -> str:
+        if isinstance(v, list):
+            return ",".join(str(x) for x in v)
+        return str(v) if v is not None else "*"
 
     @field_validator("log_level", mode="before")
     @classmethod
@@ -166,7 +166,7 @@ def get_settings() -> Settings:
             "✅ Settings loaded: env=%s, providers=%s, db=%s",
             settings.app_env,
             settings.configured_providers,
-            settings.database_url.split("@")[-1] if "@" in settings.database_url else "***",
+            str(settings.database_url).split("@")[-1] if "@" in str(settings.database_url) else "***",
         )
         return settings
     except Exception as e:

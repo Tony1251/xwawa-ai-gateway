@@ -29,7 +29,7 @@ logger = get_logger(__name__)
 
 # ===== PostgreSQL =====
 engine = create_async_engine(
-    settings.database_url,
+    str(settings.database_url),
     echo=settings.database_echo,
     pool_size=settings.database_pool_size,
     max_overflow=settings.database_max_overflow,

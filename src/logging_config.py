@@ -41,14 +41,12 @@ def configure_logging(level: str = "INFO", fmt: str = "json") -> None:
     """
     log_level = getattr(logging, level.upper(), logging.INFO)
 
-    # Shared processors
+    # Shared processors (note: add_logger_name removed - requires stdlib logger with .name attr)
     shared_processors: list[Processor] = [
         structlog.contextvars.merge_contextvars,
         structlog.stdlib.add_log_level,
-        structlog.stdlib.add_logger_name,
         _add_context,
         structlog.processors.TimeStamper(fmt="iso", utc=True),
-        structlog.stack_info.add_stack_info,
         structlog.processors.format_exc_info,
     ]
 
