@@ -59,6 +59,8 @@ class Settings(BaseSettings):
     doubao_base_url: str = "https://ark.cn-beijing.volces.com/api/v3"
     deepseek_api_key: str = ""
     deepseek_base_url: str = "https://api.deepseek.com/v1"
+    minimax_api_key: str = ""
+    minimax_base_url: str = "https://api.minimax.chat/v1"
 
     # ===== Billing =====
     markup_rate: float = Field(1.30, ge=1.0, le=10.0, description="加价倍率")
@@ -153,6 +155,8 @@ class Settings(BaseSettings):
             providers.append("midjourney")
         if self.deepseek_api_key:
             providers.append("deepseek")
+        if self.minimax_api_key:
+            providers.append("minimax")
         return providers
 
 
@@ -202,7 +206,7 @@ def validate_production_safety() -> None:
         issues.append("APP_CORS_ORIGINS=* (生产必须限制来源)")
 
     if not settings.configured_providers:
-        issues.append("未配置任何上游 Provider (OPENAI_API_KEY 等)")
+        issues.append("未配置任何上游 Provider (OPENAI_API_KEY / MINIMAX_API_KEY 等)")
 
     if settings.bcrypt_rounds < 12:
         issues.append(f"BCRYPT_ROUNDS={settings.bcrypt_rounds} 太低 (建议 >= 12)")

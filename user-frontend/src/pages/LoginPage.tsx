@@ -27,10 +27,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <h1>登录</h1>
-        <p className="subtitle">登录到 xwawa AI Gateway</p>
+    <div className="login-page">
+      <div className="login-card">
+        <h1 className="login-title">登录</h1>
+        <p className="login-sub">登录到 xwawa AI Gateway</p>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label">邮箱</label>
@@ -54,12 +54,12 @@ export default function LoginPage() {
               required
             />
           </div>
-          {error && <p className="form-error">{error}</p>}
+          {error && <p className="login-sub" style={{color:'#dc2626'}}>{error}</p>}
           <button className="btn btn-primary" style={{ width: "100%", justifyContent: "center", marginTop: 8 }} disabled={loading}>
             {loading ? "登录中..." : "登录"}
           </button>
         </form>
-        <p className="auth-link">
+        <p className="login-sub">
           还没有账号？<Link to="/register">注册</Link>
         </p>
       </div>

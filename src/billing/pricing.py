@@ -48,6 +48,11 @@ PRICING: dict[str, dict[str, dict[str, float]]] = {
             "deepseek-coder": {"input": 0.14, "output": 0.28},
         },
     },
+    "minimax": {
+        "chat": {
+            "MiniMax-Text-01": {"input": 0.01, "output": 0.10},
+        },
+    },
 }
 
 

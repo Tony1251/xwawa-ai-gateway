@@ -6,6 +6,7 @@ from .base import (
     DeepseekProvider,
     DoubaoProvider,
     MidjourneyProvider,
+    MiniMaxProvider,
     OpenAIProvider,
     ProviderResponse,
     get_provider,
@@ -19,5 +20,6 @@ __all__ = [
     "DoubaoProvider",
     "MidjourneyProvider",
     "DeepseekProvider",
+    "MiniMaxProvider",
     "get_provider",
 ]

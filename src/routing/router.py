@@ -29,12 +29,15 @@ SUPPORTED_MODELS: dict[str, str] = {
     "deepseek-coder": "deepseek",
     # Midjourney（图片）
     "midjourney-v6": "midjourney",
+    # MiniMax
+    "MiniMax-Text-01": "minimax",
 }
 
 
 # 路由偏好（可配置）
 ROUTING_PRIORITY: list[str] = [
-    "doubao",  # 性价比最高
+    "minimax",  # 优先 MiniMax（已配置）
+    "doubao",  # 性价比
     "deepseek",
     "openai",  # 质量优先
     "anthropic",
@@ -84,6 +87,7 @@ class ModelRouter:
             ("doubao-", "doubao"),
             ("deepseek-", "deepseek"),
             ("midjourney-", "midjourney"),
+            ("MiniMax-", "minimax"),
         ]:
             if model.startswith(prefix):
                 return RoutingDecision(
@@ -93,7 +97,14 @@ class ModelRouter:
                     reason=f"prefix_match:{prefix}",
                 )
 
-        # 默认路由到 openai
+        # 默认路由到 minimax（如果已配置）
+        if settings.minimax_api_key:
+            return RoutingDecision(
+                provider="minimax",
+                model=model,
+                endpoint="/v1/chat/completions",
+                reason="default_fallback",
+            )
         if settings.openai_api_key:
             return RoutingDecision(
                 provider="openai",
