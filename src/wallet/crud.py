@@ -1,18 +1,17 @@
 """Wallet CRUD 操作"""
+
 from __future__ import annotations
 
 import hashlib
 import secrets
+from collections.abc import Sequence
 from datetime import datetime
 from decimal import Decimal
-from typing import Sequence
 
-import bcrypt
-from sqlalchemy import select, update, func
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .models import ApiKey, Agent, Transaction, User, Wallet, UsageLog
-
+from .models import Agent, ApiKey, Transaction, UsageLog, User, Wallet
 
 # ===== User =====
 
@@ -205,9 +204,7 @@ async def create_api_key(
 
 async def get_api_keys(session: AsyncSession, user_id: int) -> Sequence[ApiKey]:
     result = await session.execute(
-        select(ApiKey)
-        .where(ApiKey.user_id == user_id)
-        .order_by(ApiKey.created_at.desc())
+        select(ApiKey).where(ApiKey.user_id == user_id).order_by(ApiKey.created_at.desc())
     )
     return result.scalars().all()
 
@@ -253,9 +250,7 @@ async def create_agent(
 
 async def get_agents(session: AsyncSession, user_id: int) -> Sequence[Agent]:
     result = await session.execute(
-        select(Agent)
-        .where(Agent.user_id == user_id)
-        .order_by(Agent.created_at.desc())
+        select(Agent).where(Agent.user_id == user_id).order_by(Agent.created_at.desc())
     )
     return result.scalars().all()
 

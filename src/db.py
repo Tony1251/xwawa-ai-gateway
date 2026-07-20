@@ -6,24 +6,23 @@
 - Redis 连接管理（用于限流）
 - 慢查询告警日志
 """
+
 from __future__ import annotations
 
-import asyncio
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
-from redis.asyncio import Redis, ConnectionPool
+from redis.asyncio import ConnectionPool, Redis
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
 from sqlalchemy.pool import AsyncAdaptedQueuePool
-from sqlalchemy import text
 
 from .config import settings
 from .logging_config import get_logger
-from .wallet.models import Base
 
 logger = get_logger(__name__)
 
@@ -35,8 +34,8 @@ engine = create_async_engine(
     max_overflow=settings.database_max_overflow,
     poolclass=AsyncAdaptedQueuePool,
     pool_pre_ping=True,
-    pool_recycle=3600,       # 1h 回收连接（MySQL/PG 兼容性）
-    pool_timeout=30,          # 获取连接超时 30s
+    pool_recycle=3600,  # 1h 回收连接（MySQL/PG 兼容性）
+    pool_timeout=30,  # 获取连接超时 30s
 )
 
 AsyncSessionLocal = async_sessionmaker(
@@ -51,6 +50,7 @@ async def init_db() -> None:
     """初始化数据库（通过 alembic 迁移）"""
     import subprocess
     import sys
+
     # 用 subprocess 调用 alembic upgrade head（同步阻塞，但只在启动时执行一次）
     result = subprocess.run(
         [sys.executable, "-m", "alembic", "upgrade", "head"],

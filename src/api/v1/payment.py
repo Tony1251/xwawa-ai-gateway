@@ -1,26 +1,25 @@
 """Payment 路由：支付订单 / 充值 / 回调"""
+
 from __future__ import annotations
 
-from decimal import Decimal
-
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ...audit.logger import AuditLogger
 from ...db import get_db
-from ...payment.providers import get_payment_provider, PaymentStatus
+from ...payment.providers import PaymentStatus, get_payment_provider
 from ...wallet.crud import (
-    get_wallet_by_user_id,
     create_transaction,
+    get_wallet_by_user_id,
     update_wallet_balance,
 )
 from ...wallet.models import User
-from ...audit.logger import AuditLogger
 from .auth import get_current_user
 from .schemas import (
     ApiResponse,
     CreatePaymentOrderRequest,
-    PaymentOrderResponse,
     PaymentCallbackRequest,
+    PaymentOrderResponse,
 )
 
 router = APIRouter()
@@ -40,16 +39,18 @@ async def create_order(
         subject=req.subject,
         metadata=req.metadata,
     )
-    return ApiResponse(data=PaymentOrderResponse(
-        order_id=order.order_id,
-        amount=order.amount,
-        currency=order.currency,
-        status=order.status.value,
-        provider=order.provider,
-        subject=order.subject,
-        created_at=order.created_at,
-        paid_at=order.paid_at,
-    ))
+    return ApiResponse(
+        data=PaymentOrderResponse(
+            order_id=order.order_id,
+            amount=order.amount,
+            currency=order.currency,
+            status=order.status.value,
+            provider=order.provider,
+            subject=order.subject,
+            created_at=order.created_at,
+            paid_at=order.paid_at,
+        )
+    )
 
 
 @router.get("/orders/{order_id}", response_model=ApiResponse)
@@ -62,21 +63,23 @@ async def get_order(
     try:
         order = await provider.query_order(order_id)
     except ValueError:
-        raise HTTPException(status_code=404, detail="订单不存在")
+        raise HTTPException(status_code=404, detail="订单不存在") from None
 
     if order.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="无权访问此订单")
 
-    return ApiResponse(data=PaymentOrderResponse(
-        order_id=order.order_id,
-        amount=order.amount,
-        currency=order.currency,
-        status=order.status.value,
-        provider=order.provider,
-        subject=order.subject,
-        created_at=order.created_at,
-        paid_at=order.paid_at,
-    ))
+    return ApiResponse(
+        data=PaymentOrderResponse(
+            order_id=order.order_id,
+            amount=order.amount,
+            currency=order.currency,
+            status=order.status.value,
+            provider=order.provider,
+            subject=order.subject,
+            created_at=order.created_at,
+            paid_at=order.paid_at,
+        )
+    )
 
 
 @router.post("/callback/{provider}", response_model=ApiResponse)

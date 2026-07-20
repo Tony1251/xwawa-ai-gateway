@@ -5,16 +5,14 @@ A2A 场景：
 - 支持服务发现（茫茫大海里找谁？）
 - 支持原子化支付（钱和安全都要）
 """
+
 from __future__ import annotations
 
 import json
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Literal
-
-from ..config import settings
-from ..exceptions import BusinessError
+from typing import Any
 
 
 # ===== 消息类型 =====
@@ -29,6 +27,7 @@ class A2AMessageType(str):
 @dataclass
 class A2AMessage:
     """A2A 消息格式"""
+
     version: str = "1.0"
     msg_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     type: A2AMessageType = A2AMessageType.REQUEST
@@ -38,18 +37,20 @@ class A2AMessage:
     payload: dict[str, Any] = field(default_factory=dict)
 
     def to_json(self) -> str:
-        return json.dumps({
-            "version": self.version,
-            "msg_id": self.msg_id,
-            "type": self.type,
-            "from": self.from_did,
-            "to": self.to_did,
-            "timestamp": self.timestamp,
-            "payload": self.payload,
-        })
+        return json.dumps(
+            {
+                "version": self.version,
+                "msg_id": self.msg_id,
+                "type": self.type,
+                "from": self.from_did,
+                "to": self.to_did,
+                "timestamp": self.timestamp,
+                "payload": self.payload,
+            }
+        )
 
     @classmethod
-    def from_json(cls, raw: str) -> "A2AMessage":
+    def from_json(cls, raw: str) -> A2AMessage:
         data = json.loads(raw)
         return cls(
             version=data.get("version", "1.0"),
@@ -66,8 +67,9 @@ class A2AMessage:
 @dataclass
 class A2ARequest:
     """A2A 请求（调用另一个 Agent 的服务）"""
+
     service: str  # e.g. "image_generation", "data_analysis"
-    action: str    # e.g. "generate", "analyze"
+    action: str  # e.g. "generate", "analyze"
     params: dict[str, Any]
     payment: dict[str, Any] = field(default_factory=dict)  # 支付信息
     callback_url: str = ""  # 异步结果回调
@@ -76,6 +78,7 @@ class A2ARequest:
 @dataclass
 class A2AResponse:
     """A2A 响应"""
+
     success: bool
     result: Any = None
     error: str = ""
@@ -99,10 +102,7 @@ def register_service(did: str, service: str, endpoint: str, capability: dict[str
 
 def discover_services(service: str) -> list[dict[str, Any]]:
     """发现提供特定服务的 Agent"""
-    return [
-        info for key, info in _registered_services.items()
-        if key.endswith(f":{service}")
-    ]
+    return [info for key, info in _registered_services.items() if key.endswith(f":{service}")]
 
 
 async def a2a_pay(

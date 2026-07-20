@@ -1,4 +1,5 @@
 """定价引擎：定义各 Provider/Model 的价格表 + 计算费用"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -6,7 +7,6 @@ from decimal import Decimal
 from typing import Literal
 
 from ..config import settings
-
 
 # ===== 价格表（单位：美元 / 1M tokens）=====
 PRICING: dict[str, dict[str, dict[str, float]]] = {
@@ -54,12 +54,13 @@ PRICING: dict[str, dict[str, dict[str, float]]] = {
 @dataclass
 class CostBreakdown:
     """费用明细"""
+
     provider: str
     model: str
     input_tokens: int
     output_tokens: int
     cost_provider: Decimal  # 上游成本
-    cost_user: Decimal      # 用户支付（含加价）
+    cost_user: Decimal  # 用户支付（含加价）
     markup_rate: float
     currency: str = "USD"
 
@@ -71,7 +72,9 @@ class PricingEngine:
         self.markup_rate = markup_rate if markup_rate is not None else float(settings.markup_rate)
         self.tax_rate = tax_rate if tax_rate is not None else float(settings.tax_rate)
 
-    def get_price(self, provider: str, model: str, token_type: Literal["input", "output"]) -> Decimal:
+    def get_price(
+        self, provider: str, model: str, token_type: Literal["input", "output"]
+    ) -> Decimal:
         """获取指定 provider/model 的单位价格（$/1M tokens）"""
         try:
             prices = PRICING[provider]["chat"][model]
@@ -99,9 +102,9 @@ class PricingEngine:
 
     def calculate_user_cost(self, cost_provider: Decimal) -> Decimal:
         """应用加价倍率计算用户价格（含税）"""
-        return (cost_provider * Decimal(str(self.markup_rate)) * Decimal(1 + self.tax_rate)).quantize(
-            Decimal("0.0001")
-        )
+        return (
+            cost_provider * Decimal(str(self.markup_rate)) * Decimal(1 + self.tax_rate)
+        ).quantize(Decimal("0.0001"))
 
     def calculate(
         self,

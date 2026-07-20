@@ -1,20 +1,24 @@
 """支付 Provider 抽象 + Mock 实现"""
+
 from __future__ import annotations
+
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
-class PaymentStatus(str, Enum):
+
+class PaymentStatus(StrEnum):
     PENDING = "pending"
     PROCESSING = "processing"
     SUCCESS = "success"
     FAILED = "failed"
     REFUNDED = "refunded"
     EXPIRED = "expired"
+
 
 @dataclass
 class PaymentOrder:
@@ -43,6 +47,7 @@ class PaymentOrder:
             "paid_at": self.paid_at.isoformat() if self.paid_at else None,
         }
 
+
 class PaymentProvider(ABC):
     name: str = "base"
 
@@ -63,6 +68,7 @@ class PaymentProvider(ABC):
 
     @abstractmethod
     async def callback(self, callback_data: dict[str, Any]) -> PaymentOrder: ...
+
 
 class MockPaymentProvider(PaymentProvider):
     name = "mock"
@@ -109,7 +115,9 @@ class MockPaymentProvider(PaymentProvider):
         order_id = callback_data.get("order_id", "")
         return await self.query_order(order_id)
 
+
 _payment_provider: PaymentProvider | None = None
+
 
 def get_payment_provider() -> PaymentProvider:
     global _payment_provider

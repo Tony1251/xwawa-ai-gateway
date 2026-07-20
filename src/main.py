@@ -10,6 +10,7 @@
 7. 路由
 8. 启动校验
 """
+
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
@@ -62,6 +63,7 @@ async def lifespan(app: FastAPI):
 
     # 关闭
     from .db import close_db, close_redis
+
     await close_db()
     await close_redis()
     log.info("👋 Application shutdown complete")

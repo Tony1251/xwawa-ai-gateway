@@ -1,7 +1,7 @@
 """AI Provider 抽象层 + 各 Provider 实现"""
+
 from __future__ import annotations
 
-import asyncio
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
@@ -15,6 +15,7 @@ from ..exceptions import ProviderError
 @dataclass
 class ProviderResponse:
     """Provider 标准响应"""
+
     content: str
     input_tokens: int
     output_tokens: int
@@ -52,9 +53,10 @@ class BaseProvider(ABC):
         """向量嵌入"""
         ...
 
+    @abstractmethod
     async def close(self) -> None:
-        """清理资源（子类可重写）"""
-        pass
+        """清理资源"""
+        ...
 
 
 class OpenAIProvider(BaseProvider):
@@ -195,7 +197,9 @@ class AnthropicProvider(BaseProvider):
             raw=data,
         )
 
-    async def embeddings(self, model: str, input: str | list[str], **kwargs: Any) -> list[list[float]]:
+    async def embeddings(
+        self, model: str, input: str | list[str], **kwargs: Any
+    ) -> list[list[float]]:
         raise ProviderError("Anthropic 不支持 embeddings")
 
 
@@ -277,7 +281,9 @@ class MidjourneyProvider(BaseProvider):
 
     name = "midjourney"
 
-    async def chat(self, model: str, messages: list[dict[str, str]], **kwargs: Any) -> ProviderResponse:
+    async def chat(
+        self, model: str, messages: list[dict[str, str]], **kwargs: Any
+    ) -> ProviderResponse:
         raise ProviderError("Midjourney 不支持 chat 接口，请使用 images 接口")
 
     async def images(
@@ -372,7 +378,9 @@ class DeepseekProvider(BaseProvider):
             raw=data,
         )
 
-    async def embeddings(self, model: str, input: str | list[str], **kwargs: Any) -> list[list[float]]:
+    async def embeddings(
+        self, model: str, input: str | list[str], **kwargs: Any
+    ) -> list[list[float]]:
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",

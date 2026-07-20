@@ -1,4 +1,5 @@
 """中间件：CORS / Request ID / 请求日志 / 性能监控"""
+
 from __future__ import annotations
 
 import time
@@ -10,7 +11,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import Response
 
 from .config import settings
-from .logging_config import get_logger, request_id_ctx, user_id_ctx
+from .logging_config import get_logger, request_id_ctx
 
 log = get_logger(__name__)
 

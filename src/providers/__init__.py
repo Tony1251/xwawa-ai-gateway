@@ -1,12 +1,13 @@
 """providers 模块：AI Provider 工厂"""
+
 from .base import (
-    BaseProvider,
-    ProviderResponse,
-    OpenAIProvider,
     AnthropicProvider,
+    BaseProvider,
+    DeepseekProvider,
     DoubaoProvider,
     MidjourneyProvider,
-    DeepseekProvider,
+    OpenAIProvider,
+    ProviderResponse,
     get_provider,
 )
 

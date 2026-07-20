@@ -1,23 +1,22 @@
 """Chat 路由：AI 对话 + 扣费"""
+
 from __future__ import annotations
 
 import time
 import uuid
-from decimal import Decimal
 
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ...audit.ml_detector import MLAnomalyDetector
 from ...billing import PricingEngine
-from ...config import settings
 from ...db import get_db
-from ...exceptions import ProviderError, RiskLimitExceededError, InsufficientBalanceError
+from ...exceptions import InsufficientBalanceError, ProviderError, RiskLimitExceededError
+from ...logging_config import get_logger, user_id_ctx
 from ...providers import get_provider
 from ...routing import get_router
 from ...wallet.credit import CreditService
 from ...wallet.models import User
-from ...audit.ml_detector import MLAnomalyDetector
-from ...logging_config import get_logger, user_id_ctx
 from .auth import get_current_user
 from .schemas import ApiResponse, ChatRequest, ChatResponse
 
@@ -94,16 +93,18 @@ async def chat(
             if detection.is_anomalous:
                 log.warning("AnomalyDetected", user_id=current_user.id, reason=detection.reason)
 
-        return ApiResponse(data=ChatResponse(
-            id=request_id,
-            model=upstream.model,
-            content=upstream.content,
-            input_tokens=upstream.input_tokens,
-            output_tokens=upstream.output_tokens,
-            cost_user=cost_breakdown.cost_user,
-            cost_provider=cost_breakdown.cost_provider,
-            provider=provider_name,
-        ))
+        return ApiResponse(
+            data=ChatResponse(
+                id=request_id,
+                model=upstream.model,
+                content=upstream.content,
+                input_tokens=upstream.input_tokens,
+                output_tokens=upstream.output_tokens,
+                cost_user=cost_breakdown.cost_user,
+                cost_provider=cost_breakdown.cost_provider,
+                provider=provider_name,
+            )
+        )
 
     finally:
         user_id_ctx.reset(token)
@@ -113,11 +114,10 @@ async def chat(
 async def list_models(provider: str | None = None):
     """列出支持的模型"""
     router_instance = get_router()
-    if provider:
-        models = router_instance.list_models(provider)
-    else:
-        models = router_instance.list_models()
-    return ApiResponse(data={
-        "models": models,
-        "providers": router_instance.list_providers(),
-    })
+    models = router_instance.list_models(provider) if provider else router_instance.list_models()
+    return ApiResponse(
+        data={
+            "models": models,
+            "providers": router_instance.list_providers(),
+        }
+    )

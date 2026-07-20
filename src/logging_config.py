@@ -6,6 +6,7 @@
 - 自动注入 request_id / user_id
 - 支持 Sentry 集成（可选）
 """
+
 from __future__ import annotations
 
 import logging

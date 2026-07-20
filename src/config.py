@@ -6,12 +6,13 @@
 - 不同环境（dev/staging/prod）启用不同校验严格度
 - 支持热加载（lru_cache + .env 变化检测）
 """
+
 from __future__ import annotations
 
 import logging
 import secrets
 from functools import lru_cache
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field, PostgresDsn, RedisDsn, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -100,9 +101,7 @@ class Settings(BaseSettings):
     @classmethod
     def _validate_secret_key(cls, v: str) -> str:
         if v == "CHANGE_ME" or v == "CHANGE_ME_64_HEX_CHARS":
-            raise ValueError(
-                "❌ APP_SECRET_KEY 未设置!生产环境必须用 secrets.token_hex(32) 生成"
-            )
+            raise ValueError("❌ APP_SECRET_KEY 未设置!生产环境必须用 secrets.token_hex(32) 生成")
         if len(v) < 32:
             raise ValueError("❌ APP_SECRET_KEY 至少 32 字符")
         return v
@@ -166,7 +165,9 @@ def get_settings() -> Settings:
             "✅ Settings loaded: env=%s, providers=%s, db=%s",
             settings.app_env,
             settings.configured_providers,
-            str(settings.database_url).split("@")[-1] if "@" in str(settings.database_url) else "***",
+            str(settings.database_url).split("@")[-1]
+            if "@" in str(settings.database_url)
+            else "***",
         )
         return settings
     except Exception as e:
@@ -228,7 +229,9 @@ if __name__ == "__main__":
         # 打印配置摘要（脱敏）
         print(f"App: {settings.app_name} ({settings.app_env})")
         print(f"Port: {settings.app_port}")
-        print(f"DB: {settings.database_url.split('@')[-1] if '@' in settings.database_url else '***'}")
+        print(
+            f"DB: {settings.database_url.split('@')[-1] if '@' in settings.database_url else '***'}"
+        )
         print(f"Redis: {'configured' if settings.redis_url else 'not configured'}")
         print(f"Providers: {settings.configured_providers or 'none'}")
         print(f"Rate Limit: {settings.rate_limit_requests_per_minute} req/min")

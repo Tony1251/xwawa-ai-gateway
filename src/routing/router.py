@@ -1,13 +1,11 @@
 """模型路由：根据请求特征选择最优 Provider + Model"""
+
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
-from typing import Literal
 
 from ..config import settings
 from ..exceptions import ProviderError
-
 
 # ===== 路由规则 =====
 # 支持的模型列表
@@ -36,9 +34,9 @@ SUPPORTED_MODELS: dict[str, str] = {
 
 # 路由偏好（可配置）
 ROUTING_PRIORITY: list[str] = [
-    "doubao",      # 性价比最高
+    "doubao",  # 性价比最高
     "deepseek",
-    "openai",      # 质量优先
+    "openai",  # 质量优先
     "anthropic",
     "midjourney",
 ]
@@ -47,6 +45,7 @@ ROUTING_PRIORITY: list[str] = [
 @dataclass
 class RoutingDecision:
     """路由决策结果"""
+
     provider: str
     model: str
     endpoint: str

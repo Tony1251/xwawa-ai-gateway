@@ -1,26 +1,24 @@
 """WebSocket 路由：实时 AI 对话"""
+
 from __future__ import annotations
 
-import asyncio
 import json
 import time
 import uuid
-from decimal import Decimal
 
-from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
+from ...audit.ml_detector import MLAnomalyDetector
 from ...billing import PricingEngine
 from ...config import settings
-from ...db import get_db, AsyncSessionLocal
-from ...exceptions import ProviderError, InsufficientBalanceError, RiskLimitExceededError
+from ...db import AsyncSessionLocal
+from ...exceptions import InsufficientBalanceError, RiskLimitExceededError
+from ...logging_config import get_logger
 from ...providers import get_provider
 from ...routing import get_router
 from ...wallet.credit import CreditService
-from ...wallet.crud import hash_api_key, get_api_key_by_hash, get_user_by_id
+from ...wallet.crud import get_api_key_by_hash, get_user_by_id, hash_api_key
 from ...wallet.models import User
-from ...audit.ml_detector import MLAnomalyDetector
-from ...logging_config import get_logger
 
 router = APIRouter()
 log = get_logger(__name__)
@@ -60,8 +58,11 @@ async def authenticate_websocket(websocket: WebSocket) -> User | None:
     async with AsyncSessionLocal() as session:
         if token:
             import jwt
+
             try:
-                payload = jwt.decode(token, settings.app_secret_key, algorithms=[settings.jwt_algorithm])
+                payload = jwt.decode(
+                    token, settings.app_secret_key, algorithms=[settings.jwt_algorithm]
+                )
                 if payload.get("type") != "access":
                     return None
                 user = await get_user_by_id(session, int(payload["sub"]))
@@ -148,15 +149,17 @@ async def websocket_chat(websocket: WebSocket):
         )
 
         # 返回结果
-        await websocket.send_json({
-            "id": request_id,
-            "model": upstream.model,
-            "content": upstream.content,
-            "input_tokens": upstream.input_tokens,
-            "output_tokens": upstream.output_tokens,
-            "cost_user": str(cost_breakdown.cost_user),
-            "provider": decision.provider,
-        })
+        await websocket.send_json(
+            {
+                "id": request_id,
+                "model": upstream.model,
+                "content": upstream.content,
+                "input_tokens": upstream.input_tokens,
+                "output_tokens": upstream.output_tokens,
+                "cost_user": str(cost_breakdown.cost_user),
+                "provider": decision.provider,
+            }
+        )
 
     except WebSocketDisconnect:
         pass

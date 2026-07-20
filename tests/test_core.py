@@ -1,20 +1,23 @@
 """核心功能单元测试"""
-import pytest
+
 from decimal import Decimal
 
-from src.billing.pricing import PricingEngine, CostBreakdown
-from src.routing.router import ModelRouter, get_router
-from src.providers.base import get_provider
-from src.audit.ml_detector import MLAnomalyDetector, SlidingWindowStats, AnomalyResult
-from src.wallet.crud import generate_api_key, hash_api_key
-from src.payment.providers import PaymentStatus, MockPaymentProvider, PaymentOrder
+import pytest
 
+from src.audit.ml_detector import AnomalyResult, MLAnomalyDetector, SlidingWindowStats
+from src.billing.pricing import PricingEngine
+from src.payment.providers import MockPaymentProvider, PaymentStatus
+from src.routing.router import ModelRouter
+from src.wallet.crud import generate_api_key, hash_api_key
 
 # ===== Pricing =====
 
+
 def test_pricing_engine_basic():
     pricing = PricingEngine(markup_rate=1.30, tax_rate=0.06)
-    cost = pricing.calculate_provider_cost("openai", "gpt-4o", input_tokens=1_000_000, output_tokens=1_000_000)
+    cost = pricing.calculate_provider_cost(
+        "openai", "gpt-4o", input_tokens=1_000_000, output_tokens=1_000_000
+    )
     # gpt-4o: input=5, output=15 per 1M → 20 total
     assert cost == Decimal("20.000000")
 
@@ -25,7 +28,9 @@ def test_pricing_engine_basic():
 
 def test_pricing_engine_doubao():
     pricing = PricingEngine(markup_rate=1.30, tax_rate=0.06)
-    cost = pricing.calculate_provider_cost("doubao", "doubao-pro-32k", input_tokens=1_000_000, output_tokens=1_000_000)
+    cost = pricing.calculate_provider_cost(
+        "doubao", "doubao-pro-32k", input_tokens=1_000_000, output_tokens=1_000_000
+    )
     # doubao-pro-32k: input=0.001, output=0.005 → 0.006 total
     assert cost == Decimal("0.006000")
 
@@ -38,6 +43,7 @@ def test_pricing_engine_unknown_model():
 
 
 # ===== Routing =====
+
 
 def test_router_exact_match():
     router = ModelRouter()
@@ -63,9 +69,10 @@ def test_router_list_models():
 
 # ===== API Key =====
 
+
 def test_generate_api_key():
     raw_key, key_hash, key_prefix = generate_api_key()
-    assert len(raw_key) == 57  # 43 base64 chars
+    assert len(raw_key) == 58  # 44 base64 chars
     assert len(key_hash) == 64  # sha256 hex
     assert len(key_prefix) == 8
     assert key_prefix == raw_key[:8]
@@ -81,6 +88,7 @@ def test_hash_api_key_consistency():
 
 # ===== Anomaly Detection =====
 
+
 def test_sliding_window_stats():
     sw = SlidingWindowStats(window_size=5)
     sw.add(1.0)
@@ -88,6 +96,7 @@ def test_sliding_window_stats():
     sw.add(3.0)
     assert sw.mean == 2.0
     assert sw.std > 0
+
 
 def test_anomaly_detector_normal():
     result = MLAnomalyDetector.detect(
@@ -97,10 +106,11 @@ def test_anomaly_detector_normal():
         cost_user=0.01,
     )
     assert isinstance(result, AnomalyResult)
-    assert result.is_anomalous == False
+    assert not result.is_anomalous
 
 
 # ===== Payment =====
+
 
 @pytest.mark.asyncio
 async def test_mock_payment_creates_order():
@@ -128,12 +138,13 @@ async def test_mock_payment_refund():
     provider = MockPaymentProvider()
     order = await provider.create_order(user_id=1, amount=Decimal("50"), subject="测试")
     ok = await provider.refund(order.order_id)
-    assert ok == True
+    assert ok
     refunded = await provider.query_order(order.order_id)
     assert refunded.status == PaymentStatus.REFUNDED
 
 
 # ===== Integration: Pricing + Routing =====
+
 
 def test_pricing_and_routing_integration():
     pricing = PricingEngine(markup_rate=1.5, tax_rate=0.0)

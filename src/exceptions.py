@@ -6,9 +6,9 @@
 - 自动记录异常日志（含堆栈）
 - 不泄漏敏感信息（数据库密码、API key 等）
 """
+
 from __future__ import annotations
 
-import logging
 from typing import Any
 
 from fastapi import FastAPI, Request, status
@@ -141,9 +141,7 @@ async def business_exception_handler(request: Request, exc: BusinessError) -> JS
     )
 
 
-async def http_exception_handler(
-    request: Request, exc: StarletteHTTPException
-) -> JSONResponse:
+async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
     """HTTP 异常处理"""
     code_map = {
         400: "BAD_REQUEST",
@@ -198,14 +196,6 @@ async def validation_exception_handler(
     )
 
 
-def register_exception_handlers(app: FastAPI) -> None:
-    """注册全局异常处理器到 FastAPI 应用"""
-    app.add_exception_handler(BusinessError, business_exception_handler)
-    app.add_exception_handler(StarletteHTTPException, http_exception_handler)
-    app.add_exception_handler(RequestValidationError, validation_exception_handler)
-    log.info("✅ Exception handlers registered")
-
-
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """未处理异常（500）"""
     log.exception(
@@ -224,11 +214,8 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
     )
 
 
-# ===== 注册到 FastAPI =====
-
-
 def register_exception_handlers(app: FastAPI) -> None:
-    """注册所有异常处理器"""
+    """注册全局异常处理器到 FastAPI 应用"""
     app.add_exception_handler(BusinessError, business_exception_handler)
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)

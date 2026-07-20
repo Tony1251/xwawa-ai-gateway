@@ -1,24 +1,24 @@
 """Admin 路由：管理面板 API（需管理员权限）"""
+
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...db import get_db
 from ...wallet.crud import (
-    get_user_by_id,
-    get_wallet_by_user_id,
     get_transactions,
     get_usage_logs,
+    get_user_by_id,
+    get_wallet_by_user_id,
     lock_user,
 )
-from ...wallet.models import User, Transaction, UsageLog
+from ...wallet.models import UsageLog, User
 from .auth import get_current_user
-from .schemas import ApiResponse, UsageLogResponse, TransactionResponse, WalletResponse
+from .schemas import ApiResponse, TransactionResponse, UsageLogResponse, WalletResponse
 
 router = APIRouter()
 
@@ -42,17 +42,19 @@ async def get_user(
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
     wallet = await get_wallet_by_user_id(db, user_id)
-    return ApiResponse(data={
-        "id": user.id,
-        "email": user.email,
-        "phone": user.phone,
-        "nickname": user.nickname,
-        "kyc_level": user.kyc_level.value,
-        "is_active": user.is_active,
-        "is_locked": user.is_locked,
-        "created_at": user.created_at.isoformat(),
-        "wallet": WalletResponse.model_validate(wallet) if wallet else None,
-    })
+    return ApiResponse(
+        data={
+            "id": user.id,
+            "email": user.email,
+            "phone": user.phone,
+            "nickname": user.nickname,
+            "kyc_level": user.kyc_level.value,
+            "is_active": user.is_active,
+            "is_locked": user.is_locked,
+            "created_at": user.created_at.isoformat(),
+            "wallet": WalletResponse.model_validate(wallet) if wallet else None,
+        }
+    )
 
 
 @router.get("/users/{user_id}/transactions", response_model=ApiResponse)
@@ -82,7 +84,7 @@ async def get_user_usage(
 ):
     """查看用户用量"""
     logs = await get_usage_logs(db, user_id, limit=limit, offset=offset, provider=provider)
-    return ApiResponse(data=[UsageLogResponse.model_validate(l) for l in logs])
+    return ApiResponse(data=[UsageLogResponse.model_validate(log_item) for log_item in logs])
 
 
 @router.post("/users/{user_id}/lock", response_model=ApiResponse)
@@ -113,15 +115,15 @@ async def stats_overview(
         select(func.count(UsageLog.id)).where(UsageLog.is_anomalous == True)  # noqa: E712
     )
     # 总用量
-    total_cost = await db.scalar(
-        select(func.coalesce(func.sum(UsageLog.cost_user), Decimal("0")))
-    )
+    total_cost = await db.scalar(select(func.coalesce(func.sum(UsageLog.cost_user), Decimal("0"))))
 
-    return ApiResponse(data={
-        "total_users": user_count or 0,
-        "anomalous_logs": anomaly_count or 0,
-        "total_cost": str(total_cost or Decimal("0")),
-    })
+    return ApiResponse(
+        data={
+            "total_users": user_count or 0,
+            "anomalous_logs": anomaly_count or 0,
+            "total_cost": str(total_cost or Decimal("0")),
+        }
+    )
 
 
 @router.get("/stats/providers", response_model=ApiResponse)
@@ -135,11 +137,12 @@ async def stats_by_provider(
             UsageLog.provider,
             func.count(UsageLog.id).label("call_count"),
             func.coalesce(func.sum(UsageLog.cost_user), Decimal("0")).label("total_cost"),
-        )
-        .group_by(UsageLog.provider)
+        ).group_by(UsageLog.provider)
     )
     rows = result.all()
-    return ApiResponse(data=[
-        {"provider": r.provider, "call_count": r.call_count, "total_cost": str(r.total_cost)}
-        for r in rows
-    ])
+    return ApiResponse(
+        data=[
+            {"provider": r.provider, "call_count": r.call_count, "total_cost": str(r.total_cost)}
+            for r in rows
+        ]
+    )

@@ -6,6 +6,7 @@
 - 无需外部 ML 框架，轻量高效
 - 可扩展为 Isolation Forest / LSTM 等复杂模型
 """
+
 from __future__ import annotations
 
 import math
@@ -13,7 +14,7 @@ from collections import deque
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from sqlalchemy import select, func, and_
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..wallet.models import UsageLog
@@ -23,6 +24,7 @@ from .logger import AuditLogger
 @dataclass
 class AnomalyResult:
     """异常检测结果"""
+
     is_anomalous: bool
     z_score: float | None
     reason: str | None
@@ -112,12 +114,19 @@ class MLAnomalyDetector:
         z_score = cost_window.z_score(cost_user)
 
         if z_score is not None and abs(z_score) > cls.Z_SCORE_THRESHOLD:
-            reason = f"费用异常: z_score={z_score:.2f}, cost={cost_user}, mean={cost_window.mean:.4f}"
-            AuditLogger.log_anomaly(user_id, provider, reason, {
-                "z_score": z_score,
-                "cost": cost_user,
-                "model": model,
-            })
+            reason = (
+                f"费用异常: z_score={z_score:.2f}, cost={cost_user}, mean={cost_window.mean:.4f}"
+            )
+            AuditLogger.log_anomaly(
+                user_id,
+                provider,
+                reason,
+                {
+                    "z_score": z_score,
+                    "cost": cost_user,
+                    "model": model,
+                },
+            )
             return AnomalyResult(
                 is_anomalous=True,
                 z_score=z_score,
@@ -135,11 +144,16 @@ class MLAnomalyDetector:
 
         if len(call_window) > cls.CALL_COUNT_THRESHOLD:
             reason = f"调用频率异常: {len(call_window)} 次/分钟 > {cls.CALL_COUNT_THRESHOLD}"
-            AuditLogger.log_anomaly(user_id, provider, reason, {
-                "calls_per_minute": len(call_window),
-                "threshold": cls.CALL_COUNT_THRESHOLD,
-                "model": model,
-            })
+            AuditLogger.log_anomaly(
+                user_id,
+                provider,
+                reason,
+                {
+                    "calls_per_minute": len(call_window),
+                    "threshold": cls.CALL_COUNT_THRESHOLD,
+                    "model": model,
+                },
+            )
             return AnomalyResult(
                 is_anomalous=True,
                 z_score=None,

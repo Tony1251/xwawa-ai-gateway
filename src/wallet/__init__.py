@@ -1,29 +1,30 @@
 """Wallet 模块：数据模型 + CRUD + 信用管理"""
-from .models import Base, User, Wallet, Transaction, ApiKey, Agent, UsageLog
-from .crud import (
-    create_user,
-    get_user_by_id,
-    get_user_by_email,
-    get_user_by_phone,
-    update_user,
-    lock_user,
-    create_wallet,
-    get_wallet_by_user_id,
-    update_wallet_balance,
-    create_transaction,
-    get_transactions,
-    create_api_key,
-    get_api_keys,
-    get_api_key_by_hash,
-    deactivate_api_key,
-    create_agent,
-    get_agents,
-    get_agent_by_did,
-    update_agent,
-    create_usage_log,
-    get_usage_logs,
-)
+
 from .credit import CreditService
+from .crud import (
+    create_agent,
+    create_api_key,
+    create_transaction,
+    create_usage_log,
+    create_user,
+    create_wallet,
+    deactivate_api_key,
+    get_agent_by_did,
+    get_agents,
+    get_api_key_by_hash,
+    get_api_keys,
+    get_transactions,
+    get_usage_logs,
+    get_user_by_email,
+    get_user_by_id,
+    get_user_by_phone,
+    get_wallet_by_user_id,
+    lock_user,
+    update_agent,
+    update_user,
+    update_wallet_balance,
+)
+from .models import Agent, ApiKey, Base, Transaction, UsageLog, User, Wallet
 
 __all__ = [
     "Base",

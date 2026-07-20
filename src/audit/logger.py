@@ -1,4 +1,5 @@
 """审计日志：记录所有关键业务操作（可观测性）"""
+
 from __future__ import annotations
 
 from typing import Any
@@ -83,7 +84,9 @@ class AuditLogger:
         )
 
     @staticmethod
-    def log_wallet_update(user_id: int, balance_before: float, balance_after: float, tx_type: str) -> None:
+    def log_wallet_update(
+        user_id: int, balance_before: float, balance_after: float, tx_type: str
+    ) -> None:
         audit_log.info(
             "WalletUpdate",
             event="wallet_update",

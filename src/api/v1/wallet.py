@@ -1,4 +1,5 @@
 """Wallet 路由：余额 / 充值 / 交易记录 / Agent / 用量"""
+
 from __future__ import annotations
 
 from decimal import Decimal
@@ -6,27 +7,27 @@ from decimal import Decimal
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ...audit.logger import AuditLogger
 from ...db import get_db
 from ...wallet.crud import (
-    get_wallet_by_user_id,
-    get_transactions,
-    get_agents,
     create_agent,
-    update_agent,
+    get_agents,
+    get_transactions,
     get_usage_logs,
+    get_wallet_by_user_id,
+    update_agent,
 )
-from ...wallet.models import User, Transaction
-from ...audit.logger import AuditLogger
+from ...wallet.models import User
 from .auth import get_current_user
 from .schemas import (
+    AgentResponse,
     ApiResponse,
-    WalletResponse,
+    CreateAgentRequest,
     RechargeRequest,
     RechargeResponse,
     TransactionResponse,
-    CreateAgentRequest,
-    AgentResponse,
     UsageLogResponse,
+    WalletResponse,
 )
 
 router = APIRouter()
@@ -81,11 +82,13 @@ async def recharge(
 
     AuditLogger.log_payment(current_user.id, order.order_id, float(req.amount), "success")
 
-    return ApiResponse(data=RechargeResponse(
-        order_id=order.order_id,
-        amount=req.amount,
-        status="success",
-    ))
+    return ApiResponse(
+        data=RechargeResponse(
+            order_id=order.order_id,
+            amount=req.amount,
+            status="success",
+        )
+    )
 
 
 @router.get("/transactions", response_model=ApiResponse)
@@ -165,4 +168,4 @@ async def list_usage(
 ):
     """用量记录"""
     logs = await get_usage_logs(db, current_user.id, limit=limit, offset=offset, provider=provider)
-    return ApiResponse(data=[UsageLogResponse.model_validate(l) for l in logs])
+    return ApiResponse(data=[UsageLogResponse.model_validate(log) for log in logs])

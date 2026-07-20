@@ -1,10 +1,10 @@
 """Wallet 数据模型（与 alembic 迁移保持一致）"""
+
 from __future__ import annotations
 
 import enum
 from datetime import datetime
 from decimal import Decimal
-from typing import Literal
 
 from sqlalchemy import (
     BigInteger,
@@ -22,11 +22,13 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 class Base(DeclarativeBase):
     """所有模型的基类"""
+
     pass
 
 
-class KycLevel(str, enum.Enum):
+class KycLevel(enum.StrEnum):
     """KYC 等级"""
+
     NONE = "none"
     PHONE = "phone"
     ID_CARD = "id_card"
@@ -34,18 +36,20 @@ class KycLevel(str, enum.Enum):
     ENTERPRISE = "enterprise"
 
 
-class TransactionType(str, enum.Enum):
+class TransactionType(enum.StrEnum):
     """交易类型"""
-    RECHARGE = "recharge"           # 充值
-    CONSUME = "consume"             # 消费
-    REFUND = "refund"               # 退款
-    CREDIT_grant = "credit_grant"   # 授信
-    CREDIT_REPAY = "credit_repay"   # 还款
-    BONUS = "bonus"                 # 赠送
+
+    RECHARGE = "recharge"  # 充值
+    CONSUME = "consume"  # 消费
+    REFUND = "refund"  # 退款
+    CREDIT_grant = "credit_grant"  # 授信
+    CREDIT_REPAY = "credit_repay"  # 还款
+    BONUS = "bonus"  # 赠送
 
 
 class User(Base):
     """用户表"""
+
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
@@ -77,15 +81,26 @@ class User(Base):
 
 class Wallet(Base):
     """钱包表"""
+
     __tablename__ = "wallets"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"), unique=True, nullable=False)
+    user_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("users.id"), unique=True, nullable=False
+    )
     balance: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False, default=Decimal("0"))
-    credit_limit: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False, default=Decimal("0"))
-    used_this_month: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False, default=Decimal("0"))
-    daily_limit: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False, default=Decimal("10"))
-    per_call_limit: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False, default=Decimal("0.50"))
+    credit_limit: Mapped[Decimal] = mapped_column(
+        Numeric(12, 4), nullable=False, default=Decimal("0")
+    )
+    used_this_month: Mapped[Decimal] = mapped_column(
+        Numeric(12, 4), nullable=False, default=Decimal("0")
+    )
+    daily_limit: Mapped[Decimal] = mapped_column(
+        Numeric(12, 4), nullable=False, default=Decimal("10")
+    )
+    per_call_limit: Mapped[Decimal] = mapped_column(
+        Numeric(12, 4), nullable=False, default=Decimal("0.50")
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=datetime.utcnow
     )
@@ -99,6 +114,7 @@ class Wallet(Base):
 
 class Transaction(Base):
     """交易记录表"""
+
     __tablename__ = "transactions"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
@@ -123,6 +139,7 @@ class Transaction(Base):
 
 class ApiKey(Base):
     """API Key 表"""
+
     __tablename__ = "api_keys"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
@@ -150,6 +167,7 @@ class ApiKey(Base):
 
 class Agent(Base):
     """Agent 表"""
+
     __tablename__ = "agents"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
@@ -157,8 +175,12 @@ class Agent(Base):
     did: Mapped[str] = mapped_column(String(128), unique=True, nullable=False)
     name: Mapped[str] = mapped_column(String(64), nullable=False)
     agent_type: Mapped[str] = mapped_column(String(32), nullable=False)
-    per_call_limit: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False, default=Decimal("0.50"))
-    daily_limit: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False, default=Decimal("10"))
+    per_call_limit: Mapped[Decimal] = mapped_column(
+        Numeric(12, 4), nullable=False, default=Decimal("0.50")
+    )
+    daily_limit: Mapped[Decimal] = mapped_column(
+        Numeric(12, 4), nullable=False, default=Decimal("10")
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=datetime.utcnow
@@ -175,6 +197,7 @@ class Agent(Base):
 
 class UsageLog(Base):
     """用量日志表"""
+
     __tablename__ = "usage_logs"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)

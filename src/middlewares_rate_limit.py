@@ -6,6 +6,7 @@
 - Redis Lua 脚本保证原子性
 - 触发限流返回 429 + Retry-After 头
 """
+
 from __future__ import annotations
 
 import time
@@ -13,8 +14,8 @@ from typing import Literal
 
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware
 from redis.asyncio import Redis
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from .config import settings
 from .logging_config import get_logger

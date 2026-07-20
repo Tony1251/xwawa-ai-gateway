@@ -1,17 +1,18 @@
 """信用额度服务（扣费核心逻辑）"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from decimal import Decimal
-from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
-from sqlalchemy import select, func, and_
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..exceptions import InsufficientBalanceError, RiskLimitExceededError
 from .crud import create_transaction, create_usage_log, get_wallet_by_user_id, update_wallet_balance
-from .models import Transaction, Wallet
+from .models import Transaction
 
 if TYPE_CHECKING:
     from ..billing.pricing import PricingEngine
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
 @dataclass
 class DeductResult:
     """扣费结果"""
+
     success: bool
     transaction_id: int
     balance_after: Decimal
@@ -30,7 +32,7 @@ class DeductResult:
 class CreditService:
     """信用服务：检查余额/限额 → 扣费 → 记录日志"""
 
-    def __init__(self, session: AsyncSession, pricing: "PricingEngine"):
+    def __init__(self, session: AsyncSession, pricing: PricingEngine):
         self.session = session
         self.pricing = pricing
 
@@ -61,7 +63,9 @@ class CreditService:
         if not wallet:
             raise InsufficientBalanceError("钱包不存在")
 
-        cost_provider = self.pricing.calculate_provider_cost(provider, model, input_tokens, output_tokens)
+        cost_provider = self.pricing.calculate_provider_cost(
+            provider, model, input_tokens, output_tokens
+        )
         cost_user = self.pricing.calculate_user_cost(cost_provider)
 
         # ---- 风险检查 ----
@@ -138,8 +142,7 @@ class CreditService:
         today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
 
         result = await self.session.execute(
-            select(func.coalesce(func.sum(Transaction.amount), Decimal("0")))
-            .where(
+            select(func.coalesce(func.sum(Transaction.amount), Decimal("0"))).where(
                 and_(
                     Transaction.wallet_id == wallet_id,
                     Transaction.type == "consume",

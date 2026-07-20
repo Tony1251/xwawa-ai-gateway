@@ -1,4 +1,5 @@
 """A2A 路由：Agent-to-Agent 通信"""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
@@ -6,7 +7,7 @@ from fastapi import APIRouter, Depends
 from ...a2a.protocol import a2a_pay, discover_services, register_service
 from ...wallet.models import User
 from .auth import get_current_user
-from .schemas import ApiResponse, A2ARequestSchema, A2AResponseSchema
+from .schemas import A2ARequestSchema, A2AResponseSchema, ApiResponse
 
 router = APIRouter()
 
@@ -25,12 +26,14 @@ async def a2a_pay_endpoint(
         action=req.action,
         params=req.params,
     )
-    return ApiResponse(data=A2AResponseSchema(
-        success=result.success,
-        result=result.result,
-        error=result.error,
-        payment_confirmation=result.payment_confirmation,
-    ))
+    return ApiResponse(
+        data=A2AResponseSchema(
+            success=result.success,
+            result=result.result,
+            error=result.error,
+            payment_confirmation=result.payment_confirmation,
+        )
+    )
 
 
 @router.get("/discover/{service}", response_model=ApiResponse)

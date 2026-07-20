@@ -49,7 +49,7 @@ addopts = "-v --tb=short"
 target-version = "py311"
 line-length = 100
 select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM"]
-ignore = ["E501"]
+ignore = ["E501", "B008"]  # B008: Depends() in defaults is standard FastAPI pattern
 
 [tool.mypy]
 python_version = "3.11"

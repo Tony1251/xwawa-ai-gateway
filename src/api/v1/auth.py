@@ -1,35 +1,35 @@
 """认证路由：注册 / 登录 / JWT / API Key"""
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta
 
 import bcrypt
-import httpx
 import jwt
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...config import settings
 from ...db import get_db
 from ...wallet.crud import (
+    create_api_key,
     create_user,
     create_wallet,
-    create_api_key,
-    get_user_by_email,
-    get_api_keys,
     deactivate_api_key,
     get_api_key_by_hash,
+    get_api_keys,
+    get_user_by_email,
     hash_api_key,
 )
 from ...wallet.models import User
 from .schemas import (
-    ApiResponse,
-    RegisterRequest,
-    LoginRequest,
-    TokenResponse,
-    CreateApiKeyRequest,
     ApiKeyResponse,
+    ApiResponse,
+    CreateApiKeyRequest,
     CreateApiKeyResponse,
+    LoginRequest,
+    RegisterRequest,
+    TokenResponse,
 )
 
 router = APIRouter()
@@ -44,7 +44,9 @@ def hash_password(password: str) -> str:
 
 
 def create_access_token(user_id: int, expires_delta: timedelta | None = None) -> str:
-    expire = datetime.utcnow() + (expires_delta or timedelta(hours=settings.jwt_access_token_expire_hours))
+    expire = datetime.utcnow() + (
+        expires_delta or timedelta(hours=settings.jwt_access_token_expire_hours)
+    )
     payload = {"sub": str(user_id), "exp": expire, "type": "access"}
     return jwt.encode(payload, settings.app_secret_key, algorithm=settings.jwt_algorithm)
 
@@ -59,9 +61,9 @@ def decode_token(token: str) -> dict:
     try:
         return jwt.decode(token, settings.app_secret_key, algorithms=[settings.jwt_algorithm])
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token 已过期")
+        raise HTTPException(status_code=401, detail="Token 已过期") from None
     except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="无效的 Token")
+        raise HTTPException(status_code=401, detail="无效的 Token") from None
 
 
 async def get_current_user(
@@ -76,6 +78,7 @@ async def get_current_user(
             raise HTTPException(status_code=401, detail="无效的 Token 类型")
         user_id = int(payload["sub"])
         from ...wallet.crud import get_user_by_id
+
         user = await get_user_by_id(db, user_id)
         if not user or not user.is_active:
             raise HTTPException(status_code=401, detail="用户不存在或已禁用")
@@ -93,6 +96,7 @@ async def get_current_user(
         api_key_obj.last_used_at = datetime.utcnow()
         await db.commit()
         from ...wallet.crud import get_user_by_id
+
         user = await get_user_by_id(db, api_key_obj.user_id)
         if not user or not user.is_active:
             raise HTTPException(status_code=401, detail="用户不存在或已禁用")
@@ -137,11 +141,13 @@ async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
     access_token = create_access_token(user.id)
     refresh_token = create_refresh_token(user.id)
 
-    return ApiResponse(data=TokenResponse(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        expires_in=settings.jwt_access_token_expire_hours * 3600,
-    ))
+    return ApiResponse(
+        data=TokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            expires_in=settings.jwt_access_token_expire_hours * 3600,
+        )
+    )
 
 
 @router.post("/refresh", response_model=ApiResponse)
@@ -157,6 +163,7 @@ async def refresh_token(req: dict, db: AsyncSession = Depends(get_db)):
 
     user_id = int(payload["sub"])
     from ...wallet.crud import get_user_by_id
+
     user = await get_user_by_id(db, user_id)
     if not user or not user.is_active:
         raise HTTPException(status_code=401, detail="用户不存在或已禁用")
@@ -182,12 +189,14 @@ async def create_key(
         expires_at=req.expires_at,
     )
     await db.commit()
-    return ApiResponse(data=CreateApiKeyResponse(
-        id=api_key_obj.id,
-        name=api_key_obj.name,
-        api_key=raw_key,
-        key_prefix=api_key_obj.key_prefix,
-    ))
+    return ApiResponse(
+        data=CreateApiKeyResponse(
+            id=api_key_obj.id,
+            name=api_key_obj.name,
+            api_key=raw_key,
+            key_prefix=api_key_obj.key_prefix,
+        )
+    )
 
 
 @router.get("/api-keys", response_model=ApiResponse)
