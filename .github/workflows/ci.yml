@@ -26,8 +26,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install mypy pydantic pydantic-settings
-      - run: mypy src/
+      - run: pip install -e ".[dev]"
+      - run: PYTHONPATH=. mypy src/
 
   test:
     name: Pytest
@@ -61,7 +61,7 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -e ".[dev]"
-      - run: pytest tests/ -v --tb=short
+      - run: PYTHONPATH=. pytest tests/ -v --tb=short
         env:
           DATABASE_URL: postgresql+asyncpg://postgres:test@localhost:5432/xwawa_test
           REDIS_URL: redis://localhost:6379
