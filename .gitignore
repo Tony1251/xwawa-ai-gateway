@@ -45,6 +45,11 @@ Thumbs.db
 *.log
 logs/
 
+# Frontend
+**/node_modules/
+**/dist/
+**/.env
+
 # Alembic
 alembic/versions/*.py
 !alembic/versions/.gitkeep

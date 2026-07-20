@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-07-20
+
+### Added
+- **完整前端工程**
+  - `admin-frontend/`: Admin 管理面板（Login/Dashboard/Users/ApiKeys/Usage + Sidebar）
+  - `user-frontend/`: 用户门户（Login/Register/Chat/Wallet/Agents 页面）
+  - `admin-frontend/src/api/client.ts`: Admin API Client（用户/API Key/用量/锁定管理）
+  - `user-frontend/src/api/client.ts`: User API Client（对话/钱包/Agent/充值）
+  - `user-frontend/src/components/`: Navbar, ChatInput 等共享组件
+  - 完整 CSS 样式（layout/sidebar/chat/wallet/agents/表格/徽章）
+
+### Features
+- 前端 Vite + React 18 + React Router + React Query
+- TypeScript strict 模式（verbatimModuleSyntax 类型导入）
+- 前端代理配置（开发环境 API 转发到 localhost:8800）
+- admin-frontend 构建产物: 273KB JS + 4KB CSS
+- user-frontend 构建产物: 255KB JS + 10KB CSS
+
 ## [0.2.0] - 2026-07-19
 
 ### Added

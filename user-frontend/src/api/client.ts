@@ -1,5 +1,5 @@
 // xwawa-ai-gateway API Client
-import axios, { AxiosInstance } from "axios";
+import axios, { type AxiosInstance } from "axios";
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:8800";
 
