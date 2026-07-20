@@ -1,5 +1,5 @@
 // xwawa-ai-gateway API Client
-import axios, { AxiosInstance } from "axios";
+import axios, { type AxiosInstance } from "axios";
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:8800";
 
@@ -133,6 +133,33 @@ class ApiClient {
   async adminGetStats() {
     const r = await this.client.get("/admin/stats/overview");
     return (r.data as any).data;
+  }
+
+  async adminListUsers(page = 1, pageSize = 20) {
+    const r = await this.client.get("/admin/users", { params: { page, page_size: pageSize } });
+    return (r.data as any).data as { items: any[]; total: number; page: number; page_size: number };
+  }
+
+  async adminLockUser(userId: number) {
+    const r = await this.client.post("/admin/users/" + userId + "/lock");
+    return (r.data as any).data;
+  }
+
+  async adminUnlockUser(userId: number) {
+    const r = await this.client.post("/admin/users/" + userId + "/unlock");
+    return (r.data as any).data;
+  }
+
+  async adminGetUserApiKeys(userId: number) {
+    const r = await this.client.get("/admin/users/" + userId + "/api-keys");
+    return (r.data as any).data as any[];
+  }
+
+  async adminGetUserUsage(userId: number, page = 1, pageSize = 20) {
+    const r = await this.client.get("/admin/users/" + userId + "/usage", {
+      params: { page, page_size: pageSize },
+    });
+    return (r.data as any).data as { items: any[]; total: number; page: number; page_size: number };
   }
 }
 
