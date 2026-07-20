@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 import bcrypt
 import jwt
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...config import settings
@@ -66,12 +66,22 @@ def decode_token(token: str) -> dict:
         raise HTTPException(status_code=401, detail="无效的 Token") from None
 
 
+def _extract_bearer_token(request: Request) -> str | None:
+    """从 Authorization: Bearer <token> header 提取 token"""
+    auth = request.headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        return auth[7:]
+    return None
+
+
 async def get_current_user(
-    token: str = None,
-    api_key: str = None,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> User:
     """从 JWT 或 API Key 获取当前用户"""
+    token = _extract_bearer_token(request)
+    api_key = request.headers.get("X-API-Key", "")
+
     if token:
         payload = decode_token(token)
         if payload.get("type") != "access":

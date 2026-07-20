@@ -43,20 +43,18 @@ class BaseProvider(ABC):
         """聊天补全"""
         ...
 
-    @abstractmethod
     async def embeddings(
         self,
         model: str,
         input: str | list[str],
         **kwargs: Any,
     ) -> list[list[float]]:
-        """向量嵌入"""
-        ...
+        """向量嵌入（默认不支持）"""
+        raise NotImplementedError(f"{self.name} does not support embeddings")
 
-    @abstractmethod
     async def close(self) -> None:
-        """清理资源"""
-        ...
+        """清理资源（默认无操作）"""
+        pass
 
 
 class OpenAIProvider(BaseProvider):
