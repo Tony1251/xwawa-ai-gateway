@@ -83,6 +83,17 @@ async def lock_user(session: AsyncSession, user_id: int, reason: str) -> User | 
     return user
 
 
+async def unlock_user(session: AsyncSession, user_id: int) -> User | None:
+    user = await session.get(User, user_id)
+    if not user:
+        return None
+    user.is_locked = False
+    user.locked_reason = None
+    user.updated_at = datetime.utcnow()
+    await session.flush()
+    return user
+
+
 # ===== Wallet =====
 
 

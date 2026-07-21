@@ -15,6 +15,7 @@ from ...wallet.crud import (
     get_user_by_id,
     get_wallet_by_user_id,
     lock_user,
+    unlock_user,
 )
 from ...wallet.models import UsageLog, User
 from .auth import get_current_user
@@ -90,16 +91,31 @@ async def get_user_usage(
 @router.post("/users/{user_id}/lock", response_model=ApiResponse)
 async def lock_user_endpoint(
     user_id: int,
-    reason: str = Query(...),
+    body: dict,
     admin: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
     """锁定用户"""
+    reason = body.get("reason", "管理员操作")
     user = await lock_user(db, user_id, reason)
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
     await db.commit()
     return ApiResponse(data={"locked": True, "reason": reason})
+
+
+@router.post("/users/{user_id}/unlock", response_model=ApiResponse)
+async def unlock_user_endpoint(
+    user_id: int,
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """解锁用户"""
+    user = await unlock_user(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    await db.commit()
+    return ApiResponse(data={"unlocked": True})
 
 
 @router.get("/stats/overview", response_model=ApiResponse)

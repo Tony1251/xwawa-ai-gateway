@@ -22,7 +22,7 @@ from prometheus_client import make_asgi_app
 
 from .api.v1 import a2a, admin, auth, chat, payment, wallet, ws
 from .config import settings, validate_production_safety
-from .db import init_db
+from .db import check_db_health, check_redis_health, init_db
 from .exceptions import register_exception_handlers
 from .logging_config import configure_logging, get_logger
 from .middlewares import register_middlewares
@@ -125,8 +125,13 @@ async def health():
 @app.get("/health/ready", tags=["meta"])
 async def health_ready():
     """就绪检查（用于 k8s readiness probe）"""
-    # TODO: 检查数据库连接、Redis 连接
-    return {"status": "ready"}
+    from .db import check_db_health, check_redis_health
+
+    db_ok = await check_db_health()
+    redis_ok = await check_redis_health()
+    if db_ok and redis_ok:
+        return {"status": "ready", "db": "ok", "redis": "ok"}
+    return {"status": "not_ready", "db": "ok" if db_ok else "fail", "redis": "ok" if redis_ok else "fail"}
 
 
 # ===== 10. 启动 =====
