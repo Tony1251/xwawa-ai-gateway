@@ -102,9 +102,6 @@ app.include_router(a2a.router, prefix="/v1/a2a", tags=["a2a"])
 app.include_router(payment.router, prefix="/v1/payment", tags=["payment"])
 app.include_router(admin.router, prefix="/admin", tags=["admin"])
 app.include_router(discovery.router, prefix="/v1", tags=["discovery"])
-from .talent.api.v1 import talent as talent_router
-app.include_router(talent_router.router, prefix="/v1", tags=["talent"])
-
 
 # ===== 9. 健康检查 =====
 
