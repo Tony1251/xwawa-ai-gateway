@@ -20,7 +20,7 @@ import uvicorn
 from fastapi import FastAPI
 from prometheus_client import make_asgi_app
 
-from .api.v1 import a2a, admin, auth, chat, payment, wallet, ws
+from .api.v1 import a2a, admin, auth, chat, payment, wallet, ws, discovery
 from .config import settings, validate_production_safety
 from .db import check_db_health, check_redis_health, init_db
 from .exceptions import register_exception_handlers
@@ -93,6 +93,7 @@ register_middlewares(app)
 register_exception_handlers(app)
 
 # ===== 8. 路由 =====
+app.include_router(discovery.router, tags=["discovery"])
 app.include_router(chat.router, prefix="/v1", tags=["chat"])
 app.include_router(auth.router, prefix="/v1/auth", tags=["auth"])
 app.include_router(wallet.router, prefix="/v1/wallet", tags=["wallet"])
@@ -100,6 +101,9 @@ app.include_router(ws.router, prefix="/v1", tags=["websocket"])
 app.include_router(a2a.router, prefix="/v1/a2a", tags=["a2a"])
 app.include_router(payment.router, prefix="/v1/payment", tags=["payment"])
 app.include_router(admin.router, prefix="/admin", tags=["admin"])
+app.include_router(discovery.router, prefix="/v1", tags=["discovery"])
+from .talent.api.v1 import talent as talent_router
+app.include_router(talent_router.router, prefix="/v1", tags=["talent"])
 
 
 # ===== 9. 健康检查 =====

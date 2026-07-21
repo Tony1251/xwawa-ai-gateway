@@ -353,3 +353,84 @@ async def get_usage_logs(
     query = query.order_by(UsageLog.created_at.desc()).limit(limit).offset(offset)
     result = await session.execute(query)
     return result.scalars().all()
+
+
+# ===== Payment Helpers =====
+
+
+async def get_or_create_wallet(session: AsyncSession, user_id: int) -> Wallet:
+    """获取或创建用户钱包"""
+    wallet = await get_wallet_by_user_id(session, user_id)
+    if wallet is None:
+        wallet = await create_wallet(session, user_id)
+    return wallet
+
+
+async def check_balance(session: AsyncSession, wallet_id: int) -> Decimal:
+    """检查钱包余额"""
+    wallet = await session.get(Wallet, wallet_id)
+    if wallet is None:
+        return Decimal("0")
+    return wallet.balance
+
+
+async def deduct_credit(
+    session: AsyncSession,
+    user_id: int,
+    amount: Decimal,
+    tx_type: str,
+    reference: str,
+    description: str = "",
+) -> Transaction:
+    """扣减信用额度（原子操作）"""
+    wallet = await get_or_create_wallet(session, user_id)
+
+    if wallet.balance < amount:
+        from ..exceptions import BusinessError
+
+        raise BusinessError(
+            f"余额不足: 需要 {amount}, 当前 {wallet.balance}",
+            details={"required": str(amount), "available": str(wallet.balance)},
+        )
+
+    new_balance = wallet.balance - amount
+    await update_wallet_balance(session, wallet.id, new_balance)
+
+    tx = await create_transaction(
+        session=session,
+        wallet_id=wallet.id,
+        tx_type=tx_type,
+        amount=-amount,
+        balance_after=new_balance,
+        reference=reference,
+        note=description,
+    )
+    await session.commit()
+    return tx
+
+
+async def record_usage(
+    session: AsyncSession,
+    user_id: int,
+    provider: str,
+    model: str,
+    input_tokens: int,
+    output_tokens: int,
+    cost_provider: Decimal,
+    cost_user: Decimal,
+    agent_id: int | None,
+) -> UsageLog:
+    """记录 API 使用量"""
+    log = UsageLog(
+        user_id=user_id,
+        agent_id=agent_id,
+        provider=provider,
+        model=model,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        cost_provider=cost_provider,
+        cost_user=cost_user,
+    )
+    session.add(log)
+    await session.flush()
+    return log
